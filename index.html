@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;900&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
   :root {
-    /* Updated to Dark Theme */
+    /* Dark Theme */
     --bg-deep: #07090f;
     --bg-panel: #0d1117;
     --bg-card: #111620;
@@ -196,27 +196,32 @@
  
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
  
-  /* ── Simulation viewport ── */
+  /* ── Simulation Container & Viewport ── */
+  .sim-container {
+    position: relative;
+    width: 100%;
+    background: var(--bg-sim);
+    border-bottom: 1px solid var(--border);
+  }
   .sim-viewport {
     position: relative;
-    background: var(--bg-sim);
     overflow: hidden;
+    width: 100%;
     height: 320px;
-    border-bottom: 1px solid var(--border);
   }
   .sim-canvas {
     position: absolute; inset: 0;
     width: 100%; height: 100%;
   }
   
-  /* OVERLAY INFO BOX (Compact & Repositioned to Bottom-Left) */
+  /* OVERLAY INFO BOX (Absolute on desktop, transforms on mobile) */
   .sim-overlay-info {
     position: absolute; bottom: 12px; left: 12px;
     font-family: 'DM Mono', monospace;
     font-size: 11px; color: #94a3b8;
     line-height: 1.5;
     pointer-events: none;
-    background: rgba(13, 17, 23, 0.85);  /* Dark slate background */
+    background: rgba(13, 17, 23, 0.85);
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
     padding: 8px 12px;
@@ -251,6 +256,7 @@
     pointer-events: none;
     white-space: nowrap;
     background: rgba(0, 0, 0, 0.5);
+    z-index: 5;
   }
  
   /* ── Controls ── */
@@ -270,15 +276,15 @@
   }
   .control-label {
     font-size: 13px; font-weight: 700;
-    color: #ffffff; /* Brightened from muted gray to pure white */
+    color: #ffffff; 
     letter-spacing: 0.05em;
     text-transform: uppercase;
   }
   .control-display {
-    font-family: 'DM Mono', monospace; /* Changed from Share Tech Mono so it can be bold */
+    font-family: 'DM Mono', monospace;
     font-size: 16px; font-weight: 500;
-    color: #ffffff; /* Brightened text */
-    background: rgba(255, 255, 255, 0.1); /* Brighter input box */
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1); 
     border: 1px solid var(--border);
     border-radius: 6px;
     padding: 4px 10px;
@@ -299,7 +305,7 @@
   input[type=range] {
     -webkit-appearance: none; appearance: none;
     width: 100%; height: 6px;
-    background: rgba(255, 255, 255, 0.15); /* Slightly brighter slider track */
+    background: rgba(255, 255, 255, 0.15); 
     border-radius: 3px;
     outline: none;
     cursor: pointer;
@@ -416,9 +422,32 @@
     .card-header { flex-direction: column; }
     .header-right { justify-content: flex-start; gap: 16px; }
     .metric-box { align-items: flex-start; }
-    .sim-viewport { height: 240px; }
     .card-title { font-size: 14px; }
     .metric-value { font-size: 18px; }
+    
+    /* Dedicated layout for mobile overlay to completely prevent overlap */
+    .sim-container {
+      display: flex;
+      flex-direction: column;
+    }
+    .sim-overlay-info {
+      position: relative;
+      bottom: auto; left: auto;
+      max-width: 100%;
+      border-radius: 0;
+      border: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: #0b0e14; /* Solid dark background matching panel */
+      padding: 14px 16px;
+      box-shadow: none;
+      pointer-events: auto;
+    }
+    .arcing-note {
+      font-size: 10.5px;
+    }
+    .sim-viewport { 
+      height: 240px; 
+    }
   }
 </style>
 </head>
@@ -431,6 +460,161 @@
     <div class="logo-text">ARC<span>GUARD</span><br><span style="font-size:9px;color:#94a3b8;font-weight:400;">SIMULATION PLATFORM</span></div>
   </div>
   <div class="nav-badge">IEEE 1584-2018 Model Sync</div>
+</div>
+
+<!-- Personal Info / Credit Card (Moved to top) -->
+<div style="width:100%;max-width:960px;margin-bottom:24px;">
+  <div style="
+    background: linear-gradient(135deg, #0d1117 0%, #111620 50%, #0d1117 100%);
+    border: 1px solid rgba(249,115,22,0.2);
+    border-radius: 16px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    position: relative;
+  ">
+ 
+    <!-- Decorative top accent line -->
+    <div style="height:2px;background:linear-gradient(90deg,transparent 0%,#f97316 30%,#fbbf24 50%,#f97316 70%,transparent 100%);"></div>
+ 
+    <!-- Subtle grid bg -->
+    <div style="
+      position:absolute;inset:0;pointer-events:none;
+      background-image: repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(255,255,255,0.015) 28px,rgba(255,255,255,0.015) 29px),
+                        repeating-linear-gradient(90deg,transparent,transparent 28px,rgba(255,255,255,0.015) 28px,rgba(255,255,255,0.015) 29px);
+      border-radius:16px;
+    "></div>
+ 
+    <div style="padding:22px 28px 20px;position:relative;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+ 
+        <!-- Left: Avatar + Name block -->
+        <div style="display:flex;align-items:center;gap:16px;">
+          <!-- Avatar circle -->
+          <div style="
+            width:54px;height:54px;border-radius:50%;flex-shrink:0;
+            background:linear-gradient(135deg,#f97316,#ef4444);
+            display:flex;align-items:center;justify-content:center;
+            font-family:'Orbitron',monospace;font-size:18px;font-weight:900;
+            color:#fff;letter-spacing:-1px;
+            box-shadow:0 0 0 3px rgba(249,115,22,0.15), 0 0 20px rgba(249,115,22,0.3);
+          ">AV</div>
+ 
+          <!-- Name + role -->
+          <div>
+            <div style="
+              font-family:'Orbitron',monospace;font-size:16px;font-weight:700;
+              color:#f1f5f9;letter-spacing:0.04em;margin-bottom:3px;
+            ">Aadil Vahora</div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="
+                font-family:'Share Tech Mono',monospace;font-size:10px;
+                color:#f97316;background:rgba(249,115,22,0.12);
+                border:1px solid rgba(249,115,22,0.35);
+                padding:2px 8px;border-radius:3px;letter-spacing:0.1em;
+              ">22EE074</span>
+              <span style="
+                font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;
+                color:#94a3b8;letter-spacing:0.05em;
+              ">8th Semester · Electrical Engineering</span>
+            </div>
+          </div>
+        </div>
+ 
+        <!-- Right: Disclaimer pill -->
+        <div style="
+          font-family:'Share Tech Mono',monospace;font-size:9px;
+          color:#94a3b8;letter-spacing:0.08em;
+          background:rgba(255,255,255,0.03);
+          border:1px solid rgba(255,255,255,0.06);
+          padding:5px 12px;border-radius:20px;
+          white-space:nowrap;
+        ">EDUCATIONAL USE ONLY</div>
+        
+ 
+      </div>
+ 
+      <!-- Divider -->
+      <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent);margin:16px 0;"></div>
+ 
+      <!-- Details row -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;">
+ 
+        <!-- College -->
+        <div style="
+          flex:1;min-width:180px;
+          background:rgba(255,255,255,0.03);
+          border:1px solid rgba(255,255,255,0.07);
+          border-radius:10px;padding:12px 14px;
+          display:flex;align-items:center;gap:10px;
+        ">
+          <div style="
+            width:32px;height:32px;border-radius:8px;flex-shrink:0;
+            background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);
+            display:flex;align-items:center;justify-content:center;font-size:15px;
+          ">🎓</div>
+          <div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;">Institution</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:#cbd5e1;letter-spacing:0.02em;">BVM Engineering College</div>
+          </div>
+        </div>
+ 
+        <!-- Company -->
+        <div style="
+          flex:1;min-width:180px;
+          background:rgba(255,255,255,0.03);
+          border:1px solid rgba(255,255,255,0.07);
+          border-radius:10px;padding:12px 14px;
+          display:flex;align-items:center;gap:10px;
+        ">
+          <div style="
+            width:32px;height:32px;border-radius:8px;flex-shrink:0;
+            background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.2);
+            display:flex;align-items:center;justify-content:center;font-size:15px;
+          ">🏭</div>
+          <div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;">Project At</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:#cbd5e1;letter-spacing:0.02em;">Elcon Engineers Pvt. Ltd.</div>
+          </div>
+        </div>
+ 
+        <!-- Project -->
+        <div style="
+          flex:2;min-width:220px;
+          background:rgba(249,115,22,0.05);
+          border:1px solid rgba(249,115,22,0.15);
+          border-radius:10px;padding:12px 14px;
+          display:flex;align-items:center;gap:10px;
+        ">
+          <div style="
+            width:32px;height:32px;border-radius:8px;flex-shrink:0;
+            background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.3);
+            display:flex;align-items:center;justify-content:center;font-size:15px;
+          ">⚡</div>
+          <div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#f97316;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;opacity:0.7;">Final Year Project</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:#fdba74;letter-spacing:0.02em;line-height:1.3;">Power System Studies on Distribution Electrical Systems Using ETAP</div>
+          </div>
+        </div>
+ 
+      </div>
+    </div>
+ 
+    <!-- Bottom accent -->
+    <div style="height:1px;background:linear-gradient(90deg,transparent 0%,rgba(249,115,22,0.1) 50%,transparent 100%);"></div>
+    <div style="
+      padding:8px 28px;
+      display:flex;justify-content:space-between;align-items:center;
+      flex-wrap:wrap;gap:6px;
+    ">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:0.06em;">
+        ARCGUARD SIMULATION PLATFORM · IEEE 1584 · NFPA 70E
+      </div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:0.06em;">
+        NOT FOR LIVE SYSTEM DECISIONS
+      </div>
+    </div>
+  </div>
 </div>
  
 <!-- Main card -->
@@ -460,11 +644,10 @@
     <span id="alertText">Loading hazard model...</span>
   </div>
  
-  <!-- Simulation viewport -->
-  <div class="sim-viewport">
-    <canvas class="sim-canvas" id="simCanvas"></canvas>
+  <!-- Simulation Container (Groups overlay & viewport for mobile flexibility) -->
+  <div class="sim-container">
     
-    <!-- DARK THEME OVERLAY (COMPACT & BOTTOM LEFT) -->
+    <!-- DARK THEME OVERLAY -->
     <div class="sim-overlay-info">
       Bolted (Ibf): <span id="faultInfo">25.0 kA</span><br>
       Arcing (Ia): <span id="arcingInfo">22.3 kA</span><br>
@@ -472,7 +655,12 @@
       <span class="arcing-note">Note: ETAP auto-simulates slower trip times for lower Arcing Currents.</span>
     </div>
 
-    <div class="person-label" id="personLabel" style="right:6%;top:12%;transform:none;">DANGER</div>
+    <!-- Simulation viewport -->
+    <div class="sim-viewport">
+      <canvas class="sim-canvas" id="simCanvas"></canvas>
+      <div class="person-label" id="personLabel" style="right:6%;top:12%;transform:none;">DANGER</div>
+    </div>
+    
   </div>
  
   <!-- Controls -->
@@ -719,163 +907,6 @@ function highlightRow(id) { renderTable(id); }
  
 renderTable('5k_15k');
 </script>
- 
-<div style="width:100%;max-width:960px;margin-top:16px;">
- 
-  <!-- Credit card -->
-  <div style="
-    background: linear-gradient(135deg, #0d1117 0%, #111620 50%, #0d1117 100%);
-    border: 1px solid rgba(249,115,22,0.2);
-    border-radius: 16px;
-    padding: 0;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-    position: relative;
-  ">
- 
-    <!-- Decorative top accent line -->
-    <div style="height:2px;background:linear-gradient(90deg,transparent 0%,#f97316 30%,#fbbf24 50%,#f97316 70%,transparent 100%);"></div>
- 
-    <!-- Subtle grid bg -->
-    <div style="
-      position:absolute;inset:0;pointer-events:none;
-      background-image: repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(255,255,255,0.015) 28px,rgba(255,255,255,0.015) 29px),
-                        repeating-linear-gradient(90deg,transparent,transparent 28px,rgba(255,255,255,0.015) 28px,rgba(255,255,255,0.015) 29px);
-      border-radius:16px;
-    "></div>
- 
-    <div style="padding:22px 28px 20px;position:relative;">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
- 
-        <!-- Left: Avatar + Name block -->
-        <div style="display:flex;align-items:center;gap:16px;">
-          <!-- Avatar circle -->
-          <div style="
-            width:54px;height:54px;border-radius:50%;flex-shrink:0;
-            background:linear-gradient(135deg,#f97316,#ef4444);
-            display:flex;align-items:center;justify-content:center;
-            font-family:'Orbitron',monospace;font-size:18px;font-weight:900;
-            color:#fff;letter-spacing:-1px;
-            box-shadow:0 0 0 3px rgba(249,115,22,0.15), 0 0 20px rgba(249,115,22,0.3);
-          ">AV</div>
- 
-          <!-- Name + role -->
-          <div>
-            <div style="
-              font-family:'Orbitron',monospace;font-size:16px;font-weight:700;
-              color:#f1f5f9;letter-spacing:0.04em;margin-bottom:3px;
-            ">Aadil Vahora</div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <span style="
-                font-family:'Share Tech Mono',monospace;font-size:10px;
-                color:#f97316;background:rgba(249,115,22,0.12);
-                border:1px solid rgba(249,115,22,0.35);
-                padding:2px 8px;border-radius:3px;letter-spacing:0.1em;
-              ">22EE074</span>
-              <span style="
-                font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;
-                color:#94a3b8;letter-spacing:0.05em;
-              ">8th Semester · Electrical Engineering</span>
-            </div>
-          </div>
-        </div>
- 
-        <!-- Right: Disclaimer pill -->
-        <div style="
-          font-family:'Share Tech Mono',monospace;font-size:9px;
-          color:#94a3b8;letter-spacing:0.08em;
-          background:rgba(255,255,255,0.03);
-          border:1px solid rgba(255,255,255,0.06);
-          padding:5px 12px;border-radius:20px;
-          white-space:nowrap;
-        ">EDUCATIONAL USE ONLY</div>
-        
- 
-      </div>
- 
-      <!-- Divider -->
-      <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent);margin:16px 0;"></div>
- 
-      <!-- Details row -->
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;">
- 
-        <!-- College -->
-        <div style="
-          flex:1;min-width:180px;
-          background:rgba(255,255,255,0.03);
-          border:1px solid rgba(255,255,255,0.07);
-          border-radius:10px;padding:12px 14px;
-          display:flex;align-items:center;gap:10px;
-        ">
-          <div style="
-            width:32px;height:32px;border-radius:8px;flex-shrink:0;
-            background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);
-            display:flex;align-items:center;justify-content:center;font-size:15px;
-          ">🎓</div>
-          <div>
-            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;">Institution</div>
-            <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:#cbd5e1;letter-spacing:0.02em;">BVM Engineering College</div>
-          </div>
-        </div>
- 
-        <!-- Company -->
-        <div style="
-          flex:1;min-width:180px;
-          background:rgba(255,255,255,0.03);
-          border:1px solid rgba(255,255,255,0.07);
-          border-radius:10px;padding:12px 14px;
-          display:flex;align-items:center;gap:10px;
-        ">
-          <div style="
-            width:32px;height:32px;border-radius:8px;flex-shrink:0;
-            background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.2);
-            display:flex;align-items:center;justify-content:center;font-size:15px;
-          ">🏭</div>
-          <div>
-            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;">Project At</div>
-            <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:#cbd5e1;letter-spacing:0.02em;">Elcon Engineers Pvt. Ltd.</div>
-          </div>
-        </div>
- 
-        <!-- Project -->
-        <div style="
-          flex:2;min-width:220px;
-          background:rgba(249,115,22,0.05);
-          border:1px solid rgba(249,115,22,0.15);
-          border-radius:10px;padding:12px 14px;
-          display:flex;align-items:center;gap:10px;
-        ">
-          <div style="
-            width:32px;height:32px;border-radius:8px;flex-shrink:0;
-            background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.3);
-            display:flex;align-items:center;justify-content:center;font-size:15px;
-          ">⚡</div>
-          <div>
-            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#f97316;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;opacity:0.7;">Final Year Project</div>
-            <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:#fdba74;letter-spacing:0.02em;line-height:1.3;">Power System Studies on Distribution Electrical Systems Using ETAP</div>
-          </div>
-        </div>
- 
-      </div>
-    </div>
- 
-    <!-- Bottom accent -->
-    <div style="height:1px;background:linear-gradient(90deg,transparent 0%,rgba(249,115,22,0.1) 50%,transparent 100%);"></div>
-    <div style="
-      padding:8px 28px;
-      display:flex;justify-content:space-between;align-items:center;
-      flex-wrap:wrap;gap:6px;
-    ">
-      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:0.06em;">
-        ARCGUARD SIMULATION PLATFORM · IEEE 1584 · NFPA 70E
-      </div>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:0.06em;">
-        NOT FOR LIVE SYSTEM DECISIONS
-      </div>
-    </div>
- 
-  </div>
-</div>
  
 <script>
 // ─── State ─────────────────────────────────────────────────────────────────
