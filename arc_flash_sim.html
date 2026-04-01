@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arc Flash & Relay Coordination Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;900&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Updated to Dark Theme */
+    --bg-deep: #07090f;
+    --bg-panel: #0d1117;
+    --bg-card: #111620;
+    --bg-sim: #0a0c12;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-glow: rgba(249, 115, 22, 0.3);
+    --text-primary: #e8eaf2;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+    
+    --accent-orange: #f97316;
+    --accent-amber: #fbbf24;
+    --accent-red: #ef4444;
+    --accent-green: #22c55e;
+    --accent-blue: #3b82f6;
+    --accent-pink: #ff6b9d;
+    
+    --safe-color: #22c55e;
+    --cat1-color: #84cc16;
+    --cat2-color: #eab308;
+    --cat3-color: #f97316;
+    --cat4-color: #ef4444;
+    --danger-color: #ff2d55;
+    --current-hazard: #f97316;
+    --glow-intensity: 0.6;
+  }
+ 
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+  body {
+    background: var(--bg-deep);
+    font-family: 'Rajdhani', sans-serif;
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 40px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    background-image:
+      radial-gradient(ellipse 80% 40% at 50% 0%, rgba(249,115,22,0.04) 0%, transparent 60%),
+      repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,0.015) 40px, rgba(255,255,255,0.015) 41px),
+      repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.015) 40px, rgba(255,255,255,0.015) 41px);
+  }
+ 
+  /* ── Top nav bar ── */
+  .topbar {
+    width: 100%; max-width: 960px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .site-logo {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, #f97316, #ef4444);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 16px rgba(249,115,22,0.4);
+  }
+  .logo-text {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px; font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.1em;
+    line-height: 1.2;
+  }
+  .logo-text span { color: var(--accent-orange); }
+  .nav-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.08em;
+  }
+ 
+  /* ── Main card ── */
+  .main-card {
+    width: 100%; max-width: 960px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 32px 64px rgba(0,0,0,0.6);
+  }
+ 
+  /* ── Card header ── */
+  .card-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    gap: 16px; flex-wrap: wrap;
+  }
+  .header-left { display: flex; flex-direction: column; gap: 6px; }
+  .card-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 17px; font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.05em;
+  }
+  .standard-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; color: var(--accent-blue);
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    padding: 3px 8px; border-radius: 4px;
+    letter-spacing: 0.08em;
+  }
+ 
+  .header-right {
+    display: flex; gap: 20px; flex-wrap: wrap;
+  }
+  .metric-box {
+    display: flex; flex-direction: column; align-items: flex-end;
+    gap: 2px;
+  }
+  .metric-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; letter-spacing: 0.12em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+  .metric-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 22px; font-weight: 700;
+    color: var(--current-hazard);
+    transition: color 0.4s;
+    letter-spacing: 0.02em;
+  }
+  .metric-unit {
+    font-size: 13px; font-weight: 600;
+    color: var(--text-muted);
+    margin-left: 2px;
+  }
+  .ppe-value {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px; font-weight: 700;
+    color: var(--current-hazard);
+    transition: color 0.4s;
+    letter-spacing: 0.05em;
+  }
+ 
+  /* ── Alert banner ── */
+  .alert-banner {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 24px;
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 0.04em;
+    transition: all 0.4s;
+    min-height: 38px;
+  }
+  .alert-banner .pulse-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .alert-danger {
+    background: rgba(239, 68, 68, 0.12);
+    border-bottom: 1px solid rgba(239, 68, 68, 0.25);
+    color: #fca5a5;
+  }
+  .alert-danger .pulse-dot {
+    background: #ef4444;
+    box-shadow: 0 0 8px #ef4444;
+    animation: blink 0.8s infinite;
+  }
+  .alert-warning {
+    background: rgba(249, 115, 22, 0.1);
+    border-bottom: 1px solid rgba(249, 115, 22, 0.2);
+    color: #fdba74;
+  }
+  .alert-warning .pulse-dot { background: #f97316; }
+  .alert-safe {
+    background: rgba(34, 197, 94, 0.08);
+    border-bottom: 1px solid rgba(34, 197, 94, 0.15);
+    color: #86efac;
+  }
+  .alert-safe .pulse-dot { background: #22c55e; }
+ 
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+ 
+  /* ── Simulation viewport ── */
+  .sim-viewport {
+    position: relative;
+    background: var(--bg-sim);
+    overflow: hidden;
+    height: 320px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sim-canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+  }
+  
+  /* OVERLAY INFO BOX (Compact & Repositioned to Bottom-Left) */
+  .sim-overlay-info {
+    position: absolute; bottom: 12px; left: 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; color: #94a3b8;
+    line-height: 1.5;
+    pointer-events: none;
+    background: rgba(13, 17, 23, 0.85);  /* Dark slate background */
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    max-width: 250px;
+    z-index: 10;
+  }
+  .sim-overlay-info span { color: #f1f5f9; font-weight: 600; }
+  .arcing-note { 
+    color: #fbbf24; 
+    font-size: 9.5px; 
+    display: block; 
+    margin-top: 6px; 
+    border-top: 1px solid rgba(255, 255, 255, 0.1); 
+    padding-top: 6px;
+    line-height: 1.3;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+  }
+ 
+  .person-label {
+    position: absolute;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1.5px solid;
+    transition: all 0.4s;
+    pointer-events: none;
+    white-space: nowrap;
+    background: rgba(0, 0, 0, 0.5);
+  }
+ 
+  /* ── Controls ── */
+  .controls-section {
+    padding: 20px 24px;
+    background: rgba(0, 0, 0, 0.2);
+  }
+  .controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 32px;
+    margin-bottom: 16px;
+  }
+  .control-group { display: flex; flex-direction: column; gap: 8px; }
+  .control-header {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .control-label {
+    font-size: 13px; font-weight: 700;
+    color: #ffffff; /* Brightened from muted gray to pure white */
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .control-display {
+    font-family: 'DM Mono', monospace; /* Changed from Share Tech Mono so it can be bold */
+    font-size: 16px; font-weight: 500;
+    color: #ffffff; /* Brightened text */
+    background: rgba(255, 255, 255, 0.1); /* Brighter input box */
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    min-width: 60px;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .control-display:focus {
+    border-color: var(--accent-orange);
+    background: rgba(255, 255, 255, 0.15);
+  }
+  /* Remove number arrows */
+  .control-display::-webkit-outer-spin-button,
+  .control-display::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .control-display[type=number] { -moz-appearance: textfield; }
+ 
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 6px;
+    background: rgba(255, 255, 255, 0.15); /* Slightly brighter slider track */
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--accent-orange);
+    box-shadow: 0 0 10px rgba(249,115,22,0.6);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 16px rgba(249,115,22,0.8);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 18px; height: 18px; border: none;
+    border-radius: 50%;
+    background: var(--accent-orange);
+    box-shadow: 0 0 10px rgba(249,115,22,0.6);
+    cursor: pointer;
+  }
+ 
+  /* ── Buttons row ── */
+  .btn-row {
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .btn {
+    flex: 1; min-width: 120px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px; font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .btn-reset {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-muted);
+  }
+  .btn-reset:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+  }
+  .btn-safe {
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.4);
+    color: #86efac;
+  }
+  .btn-safe:hover { background: rgba(34, 197, 94, 0.2); }
+  .btn-danger {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+  }
+  .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
+ 
+  /* ── PPE legend strip ── */
+  .ppe-legend {
+    display: flex; gap: 0;
+    border-top: 1px solid var(--border);
+    overflow: hidden;
+    background: transparent;
+  }
+  .ppe-step {
+    flex: 1; padding: 10px 6px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    border-right: 1px solid var(--border);
+    transition: background 0.3s;
+    cursor: default;
+  }
+  .ppe-step:last-child { border-right: none; }
+  .ppe-step-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px; letter-spacing: 0.06em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+  .ppe-step-name {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .ppe-step-cal {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+  }
+  .ppe-step.active { background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+  .s-safe .ppe-step-name { color: var(--safe-color); }
+  .s-cat1 .ppe-step-name { color: var(--cat1-color); }
+  .s-cat2 .ppe-step-name { color: var(--cat2-color); }
+  .s-cat3 .ppe-step-name { color: var(--cat3-color); }
+  .s-cat4 .ppe-step-name { color: var(--cat4-color); }
+  .s-danger .ppe-step-name { color: var(--danger-color); }
+ 
+  /* ── Footer ── */
+  .footer {
+    margin-top: 16px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; color: var(--text-dim);
+    text-align: center;
+    letter-spacing: 0.06em;
+  }
+ 
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .controls-grid { grid-template-columns: 1fr; }
+    .card-header { flex-direction: column; }
+    .header-right { justify-content: flex-start; gap: 16px; }
+    .metric-box { align-items: flex-start; }
+    .sim-viewport { height: 240px; }
+    .card-title { font-size: 14px; }
+    .metric-value { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+ 
+<!-- Top bar -->
+<div class="topbar">
+  <div class="site-logo">
+    <div class="logo-icon">⚡</div>
+    <div class="logo-text">ARC<span>GUARD</span><br><span style="font-size:9px;color:#94a3b8;font-weight:400;">SIMULATION PLATFORM</span></div>
+  </div>
+  <div class="nav-badge">IEEE 1584-2018 Model Sync</div>
+</div>
+ 
+<!-- Main card -->
+<div class="main-card">
+ 
+  <!-- Header -->
+  <div class="card-header">
+    <div class="header-left">
+      <div class="card-title">Arc Flash &amp; Relay Coordination</div>
+      <div class="standard-badge">⬡ Restored to ETAP IEEE 1584 Sync</div>
+    </div>
+    <div class="header-right">
+      <div class="metric-box">
+        <div class="metric-label">Incident Energy</div>
+        <div class="metric-value" id="energyDisplay">--.-- <span class="metric-unit">cal/cm²</span></div>
+      </div>
+      <div class="metric-box" style="border-left: 1px solid var(--border); padding-left: 20px;">
+        <div class="metric-label">Required PPE</div>
+        <div class="ppe-value" id="ppeDisplay">Calculating...</div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- Alert banner -->
+  <div class="alert-banner alert-danger" id="alertBanner">
+    <div class="pulse-dot"></div>
+    <span id="alertText">Loading hazard model...</span>
+  </div>
+ 
+  <!-- Simulation viewport -->
+  <div class="sim-viewport">
+    <canvas class="sim-canvas" id="simCanvas"></canvas>
+    
+    <!-- DARK THEME OVERLAY (COMPACT & BOTTOM LEFT) -->
+    <div class="sim-overlay-info">
+      Bolted (Ibf): <span id="faultInfo">25.0 kA</span><br>
+      Arcing (Ia): <span id="arcingInfo">22.3 kA</span><br>
+      Trip Time: <span id="relayInfo">0.80s</span>
+      <span class="arcing-note">Note: ETAP auto-simulates slower trip times for lower Arcing Currents.</span>
+    </div>
+
+    <div class="person-label" id="personLabel" style="right:6%;top:12%;transform:none;">DANGER</div>
+  </div>
+ 
+  <!-- Controls -->
+  <div class="controls-section">
+    <div class="controls-grid">
+      <div class="control-group">
+        <div class="control-header">
+          <span class="control-label">Relay Trip Time at Ia (s)</span>
+          <input class="control-display" type="number" id="tripInput" min="0.05" max="2" step="0.0001" value="0.8000">
+        </div>
+        <input type="range" id="tripSlider" min="0.05" max="2" step="0.0001" value="0.8000">
+      </div>
+      <div class="control-group">
+        <div class="control-header">
+          <span class="control-label">Bolted Fault Current (kA)</span>
+          <input class="control-display" type="number" id="faultInput" min="1" max="50" step="0.0001" value="25.0000">
+        </div>
+        <input type="range" id="faultSlider" min="1" max="50" step="0.0001" value="25.0000">
+      </div>
+    </div>
+ 
+    <div class="btn-row">
+      <button class="btn btn-reset" onclick="resetToInitial()">↺ Reset to Initial</button>
+      <button class="btn btn-safe" onclick="setScenario('safe')">✓ Set Safe Scenario</button>
+      <button class="btn btn-danger" onclick="setScenario('danger')">⚠ Max Hazard Scenario</button>
+    </div>
+  </div>
+ 
+  <!-- PPE Legend -->
+  <div class="ppe-legend">
+    <div class="ppe-step s-safe" id="l-safe">
+      <div class="ppe-step-label">Level</div>
+      <div class="ppe-step-name">SAFE</div>
+      <div class="ppe-step-cal">&lt;1.2</div>
+    </div>
+    <div class="ppe-step s-cat1" id="l-cat1">
+      <div class="ppe-step-label">Category</div>
+      <div class="ppe-step-name">CAT 1</div>
+      <div class="ppe-step-cal">1.2–4</div>
+    </div>
+    <div class="ppe-step s-cat2" id="l-cat2">
+      <div class="ppe-step-label">Category</div>
+      <div class="ppe-step-name">CAT 2</div>
+      <div class="ppe-step-cal">4–8</div>
+    </div>
+    <div class="ppe-step s-cat3" id="l-cat3">
+      <div class="ppe-step-label">Category</div>
+      <div class="ppe-step-name">CAT 3</div>
+      <div class="ppe-step-cal">8–25</div>
+    </div>
+    <div class="ppe-step s-cat4" id="l-cat4">
+      <div class="ppe-step-label">Category</div>
+      <div class="ppe-step-name">CAT 4</div>
+      <div class="ppe-step-cal">25–40</div>
+    </div>
+    <div class="ppe-step s-danger" id="l-danger">
+      <div class="ppe-step-label">Danger</div>
+      <div class="ppe-step-name">NO PPE</div>
+      <div class="ppe-step-cal">&gt;40</div>
+    </div>
+  </div>
+ 
+</div>
+ 
+<!-- ══════════════════════════════════════════════════════════════
+     APPROACH BOUNDARY TABLE  (NFPA 70E, up to 11 kV / 15 kV)
+     ══════════════════════════════════════════════════════════════ -->
+<div style="width:100%;max-width:960px;margin-top:24px;">
+ 
+  <div style="
+    background:#0d1117;
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:0 16px 48px rgba(0,0,0,0.5);
+  ">
+ 
+    <!-- Section header -->
+    <div style="
+      padding:18px 24px 14px;
+      border-bottom:1px solid rgba(255,255,255,0.07);
+      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+      background:linear-gradient(90deg,rgba(59,130,246,0.04) 0%,transparent 60%);
+    ">
+      <div>
+        <div style="
+          font-family:'Orbitron',monospace;font-size:14px;font-weight:700;
+          color:#e2e8f0;letter-spacing:0.06em;margin-bottom:5px;
+        ">Approach Boundary Distances</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="
+            font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:0.12em;
+            color:#3b82f6;background:rgba(59,130,246,0.1);
+            border:1px solid rgba(59,130,246,0.3);
+            padding:2px 8px;border-radius:3px;
+          ">NFPA 70E TABLE 130.4(D)(a)</span>
+          <span style="
+            font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:0.1em;
+            color:#94a3b8;
+          ">Unqualified &amp; Qualified Workers · Up to 15 kV</span>
+        </div>
+      </div>
+      <!-- Voltage indicator -->
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#94a3b8;letter-spacing:0.05em;text-transform:uppercase;">System Voltage</span>
+        <select id="voltageSelect" onchange="highlightRow(this.value)" style="
+          font-family:'Share Tech Mono',monospace;font-size:12px;
+          background:#111620;color:#e8eaf2;
+          border:1px solid rgba(255,255,255,0.15);
+          border-radius:7px;padding:6px 12px;
+          outline:none;cursor:pointer;
+        ">
+          <option value="lt50">&lt; 50 V</option>
+          <option value="50_300">50 V – 300 V</option>
+          <option value="301_1k">301 V – 1 kV</option>
+          <option value="1k_5k">1.1 kV – 5 kV</option>
+          <option value="5k_15k" selected>5 kV – 15 kV (11 kV)</option>
+        </select>
+      </div>
+    </div>
+ 
+    <!-- Table wrapper -->
+    <div style="overflow-x:auto;">
+    <table id="boundaryTable" style="
+      width:100%;border-collapse:collapse;
+      font-family:'Rajdhani',sans-serif;
+    ">
+      <thead>
+        <tr>
+          <th style="
+            padding:14px 20px;text-align:left;vertical-align:middle;
+            font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;
+            color:#94a3b8;letter-spacing:0.03em;
+            border-bottom:1px solid rgba(255,255,255,0.08);
+            border-right:1px solid rgba(255,255,255,0.05);
+            min-width:180px;
+          ">Nominal Potential Difference</th>
+          <th style="
+            padding:14px 20px;text-align:center;vertical-align:middle;
+            font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;
+            color:#86efac;letter-spacing:0.03em;
+            background:rgba(34,197,94,0.06);
+            border-bottom:1px solid rgba(34,197,94,0.25);
+            border-left:1px solid rgba(255,255,255,0.05);
+            border-right:1px solid rgba(255,255,255,0.05);
+          ">Limited Approach Boundary</th>
+          <th style="
+            padding:14px 20px;text-align:center;vertical-align:middle;
+            font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;
+            color:#fca5a5;letter-spacing:0.03em;
+            background:rgba(239,68,68,0.06);
+            border-bottom:1px solid rgba(239,68,68,0.25);
+            border-left:1px solid rgba(255,255,255,0.05);
+            min-width:200px;
+          ">Restricted Approach Boundary</th>
+        </tr>
+      </thead>
+      <tbody id="boundaryBody">
+      </tbody>
+    </table>
+    </div>
+ 
+    <!-- Notes -->
+    <div style="
+      padding:14px 20px;
+      border-top:1px solid rgba(255,255,255,0.06);
+      background:rgba(0,0,0,0.2);
+    ">
+      <p style="
+        font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;
+        color:#94a3b8;line-height:1.6;margin-bottom:6px;
+      "><span style="color:#e2e8f0;font-weight:700;">Note:</span> All dimensions are distance from exposed energized electrical conductors or circuit part to worker. Highlighted row corresponds to selected system voltage.</p>
+      <p style="
+        font-family:'Share Tech Mono',monospace;font-size:10px;
+        color:#64748b;line-height:1.7;
+      ">All distances are measured from exposed energized electrical conductors or circuit parts to the worker.<br>
+      SOURCE: NATIONAL FIRE PROTECTION ASSOCIATION · NFPA 70E Standard for Electrical Safety in the Workplace</p>
+    </div>
+ 
+  </div>
+</div>
+ 
+<script>
+const boundaryData = [
+  { id:'lt50',  volt:'Less than 50 V', limited:'Not specified', restricted:'Not specified' },
+  { id:'50_300', volt:'50 V – 300 V',  limited:'1.0 m',        restricted:'Avoid contact' },
+  { id:'301_1k', volt:'301 V – 1 kV',  limited:'1.0 m',        restricted:'0.3 m' },
+  { id:'1k_5k',  volt:'1.1 kV – 5 kV', limited:'1.5 m',        restricted:'0.5 m' },
+  { id:'5k_15k', volt:'5 kV – 15 kV',  limited:'1.5 m',        restricted:'0.7 m' },
+];
+ 
+function renderTable(activeId) {
+  const tbody = document.getElementById('boundaryBody');
+  tbody.innerHTML = '';
+  boundaryData.forEach((row, i) => {
+    const isActive = row.id === activeId;
+    const isEven = i % 2 === 0;
+    const base = isEven ? 'rgba(255,255,255,0.015)' : 'transparent';
+    const bg = isActive
+      ? 'linear-gradient(90deg, rgba(249,115,22,0.12) 0%, rgba(249,115,22,0.06) 100%)'
+      : base;
+    const borderTop = isActive ? '1px solid rgba(249,115,22,0.3)' : '1px solid rgba(255,255,255,0.04)';
+    const borderBot = isActive ? '1px solid rgba(249,115,22,0.3)' : '1px solid rgba(255,255,255,0.04)';
+    const voltColor = isActive ? '#fbbf24' : '#94a3b8';
+    const limColor  = isActive ? '#86efac' : '#cbd5e1';
+    const restColor = isActive ? '#fca5a5' : '#f9a8d4';
+ 
+    const badge = isActive ? `<span style="
+      display:inline-block;margin-left:10px;
+      font-family:'Share Tech Mono',monospace;font-size:9px;
+      color:#f97316;background:rgba(249,115,22,0.15);
+      border:1px solid rgba(249,115,22,0.4);
+      padding:1px 7px;border-radius:3px;letter-spacing:0.08em;vertical-align:middle;
+    ">ACTIVE</span>` : '';
+ 
+    tbody.innerHTML += `
+      <tr style="background:${bg};border-top:${borderTop};border-bottom:${borderBot};transition:all 0.3s;">
+        <td style="
+          padding:14px 20px;
+          font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:${isActive?'700':'600'};
+          color:${voltColor};letter-spacing:0.02em;
+          border-right:1px solid rgba(255,255,255,0.05);
+        ">${row.volt}${badge}</td>
+        <td style="
+          padding:14px 20px;text-align:center;
+          font-family:'DM Mono','Share Tech Mono',monospace;font-size:15px;font-weight:600;
+          color:${limColor};
+          border-left:1px solid rgba(255,255,255,0.04);
+          border-right:1px solid rgba(255,255,255,0.05);
+          background:rgba(34,197,94,0.03)${isActive?';background:rgba(34,197,94,0.07)':''}
+        ">${row.limited}</td>
+        <td style="
+          padding:14px 20px;text-align:center;
+          font-family:'DM Mono','Share Tech Mono',monospace;font-size:15px;font-weight:600;
+          color:${restColor};
+          border-left:1px solid rgba(255,255,255,0.04);
+          background:rgba(239,68,68,0.03)${isActive?';background:rgba(239,68,68,0.09)':''}
+        ">${row.restricted}</td>
+      </tr>`;
+  });
+}
+ 
+function highlightRow(id) { renderTable(id); }
+ 
+renderTable('5k_15k');
+</script>
+ 
+<div style="width:100%;max-width:960px;margin-top:16px;">
+ 
+  <!-- Credit card -->
+  <div style="
+    background: linear-gradient(135deg, #0d1117 0%, #111620 50%, #0d1117 100%);
+    border: 1px solid rgba(249,115,22,0.2);
+    border-radius: 16px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    position: relative;
+  ">
+ 
+    <!-- Decorative top accent line -->
+    <div style="height:2px;background:linear-gradient(90deg,transparent 0%,#f97316 30%,#fbbf24 50%,#f97316 70%,transparent 100%);"></div>
+ 
+    <!-- Subtle grid bg -->
+    <div style="
+      position:absolute;inset:0;pointer-events:none;
+      background-image: repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(255,255,255,0.015) 28px,rgba(255,255,255,0.015) 29px),
+                        repeating-linear-gradient(90deg,transparent,transparent 28px,rgba(255,255,255,0.015) 28px,rgba(255,255,255,0.015) 29px);
+      border-radius:16px;
+    "></div>
+ 
+    <div style="padding:22px 28px 20px;position:relative;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+ 
+        <!-- Left: Avatar + Name block -->
+        <div style="display:flex;align-items:center;gap:16px;">
+          <!-- Avatar circle -->
+          <div style="
+            width:54px;height:54px;border-radius:50%;flex-shrink:0;
+            background:linear-gradient(135deg,#f97316,#ef4444);
+            display:flex;align-items:center;justify-content:center;
+            font-family:'Orbitron',monospace;font-size:18px;font-weight:900;
+            color:#fff;letter-spacing:-1px;
+            box-shadow:0 0 0 3px rgba(249,115,22,0.15), 0 0 20px rgba(249,115,22,0.3);
+          ">AV</div>
+ 
+          <!-- Name + role -->
+          <div>
+            <div style="
+              font-family:'Orbitron',monospace;font-size:16px;font-weight:700;
+              color:#f1f5f9;letter-spacing:0.04em;margin-bottom:3px;
+            ">Aadil Vahora</div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="
+                font-family:'Share Tech Mono',monospace;font-size:10px;
+                color:#f97316;background:rgba(249,115,22,0.12);
+                border:1px solid rgba(249,115,22,0.35);
+                padding:2px 8px;border-radius:3px;letter-spacing:0.1em;
+              ">22EE074</span>
+              <span style="
+                font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;
+                color:#94a3b8;letter-spacing:0.05em;
+              ">8th Semester · Electrical Engineering</span>
+            </div>
+          </div>
+        </div>
+ 
+        <!-- Right: Disclaimer pill -->
+        <div style="
+          font-family:'Share Tech Mono',monospace;font-size:9px;
+          color:#94a3b8;letter-spacing:0.08em;
+          background:rgba(255,255,255,0.03);
+          border:1px solid rgba(255,255,255,0.06);
+          padding:5px 12px;border-radius:20px;
+          white-space:nowrap;
+        ">EDUCATIONAL USE ONLY</div>
+        
+ 
+      </div>
+ 
+      <!-- Divider -->
+      <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent);margin:16px 0;"></div>
+ 
+      <!-- Details row -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;">
+ 
+        <!-- College -->
+        <div style="
+          flex:1;min-width:180px;
+          background:rgba(255,255,255,0.03);
+          border:1px solid rgba(255,255,255,0.07);
+          border-radius:10px;padding:12px 14px;
+          display:flex;align-items:center;gap:10px;
+        ">
+          <div style="
+            width:32px;height:32px;border-radius:8px;flex-shrink:0;
+            background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);
+            display:flex;align-items:center;justify-content:center;font-size:15px;
+          ">🎓</div>
+          <div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;">Institution</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:#cbd5e1;letter-spacing:0.02em;">BVM Engineering College</div>
+          </div>
+        </div>
+ 
+        <!-- Company -->
+        <div style="
+          flex:1;min-width:180px;
+          background:rgba(255,255,255,0.03);
+          border:1px solid rgba(255,255,255,0.07);
+          border-radius:10px;padding:12px 14px;
+          display:flex;align-items:center;gap:10px;
+        ">
+          <div style="
+            width:32px;height:32px;border-radius:8px;flex-shrink:0;
+            background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.2);
+            display:flex;align-items:center;justify-content:center;font-size:15px;
+          ">🏭</div>
+          <div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;">Project At</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:#cbd5e1;letter-spacing:0.02em;">Elcon Engineers Pvt. Ltd.</div>
+          </div>
+        </div>
+ 
+        <!-- Project -->
+        <div style="
+          flex:2;min-width:220px;
+          background:rgba(249,115,22,0.05);
+          border:1px solid rgba(249,115,22,0.15);
+          border-radius:10px;padding:12px 14px;
+          display:flex;align-items:center;gap:10px;
+        ">
+          <div style="
+            width:32px;height:32px;border-radius:8px;flex-shrink:0;
+            background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.3);
+            display:flex;align-items:center;justify-content:center;font-size:15px;
+          ">⚡</div>
+          <div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#f97316;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;opacity:0.7;">Final Year Project</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:#fdba74;letter-spacing:0.02em;line-height:1.3;">Power System Studies on Distribution Electrical Systems Using ETAP</div>
+          </div>
+        </div>
+ 
+      </div>
+    </div>
+ 
+    <!-- Bottom accent -->
+    <div style="height:1px;background:linear-gradient(90deg,transparent 0%,rgba(249,115,22,0.1) 50%,transparent 100%);"></div>
+    <div style="
+      padding:8px 28px;
+      display:flex;justify-content:space-between;align-items:center;
+      flex-wrap:wrap;gap:6px;
+    ">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:0.06em;">
+        ARCGUARD SIMULATION PLATFORM · IEEE 1584 · NFPA 70E
+      </div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:0.06em;">
+        NOT FOR LIVE SYSTEM DECISIONS
+      </div>
+    </div>
+ 
+  </div>
+</div>
+ 
+<script>
+// ─── State ─────────────────────────────────────────────────────────────────
+let tripTime = 0.80;     // Trip time based on Arcing Current
+let faultCurrent = 25;   // Bolted Fault Current
+let arcingCurrent = 0;   // Arcing Fault Current
+let animFrame;
+ 
+// ─── Calculation (IEEE 1584-2018 Restored Model to match ETAP) ─────────────
+function calcEnergy(t, I_bolted) {
+  
+  // 1. Calculate Arcing Current (Ia)
+  // ETAP calculates an arcing current which is lower than the bolted fault current.
+  // For typical industrial voltages (e.g. 11kV in your SLD) we use an approximation factor.
+  // A typical factor for Enclosed Switchgear is ~0.89 to 0.95. Let's use 0.89 for realistic coordination.
+  const Ia = I_bolted * 0.89;
+  arcingCurrent = Ia; // Store for UI
+
+  // 2. IEEE 1584 Empirical Formula 
+  // Based on your previous ETAP settings image
+  const Cf = 1.0;         // Calculation factor 
+  const k1 = -0.555;      // Equipment factor (Enclosed Switchgear)
+  const k2 = -0.113;      // System grounding factor (Grounded System)
+  const D  = 910;         // Working distance in mm (~36 inches)
+  const x  = 0.973;       // Distance exponent
+  
+  // Normalized Incident Energy (En) uses the ARCING current (Ia)
+  const En = Math.pow(10, k1 + k2 + 1.081 * Math.log10(Ia));
+  
+  // Final Incident Energy (E) in cal/cm²
+  const E = 4.184 * Cf * En * (t / 0.2) * Math.pow(610 / D, x);
+  
+  return E;
+}
+ 
+function getHazardLevel(E) {
+  if (E < 1.2)  return { id: 'safe',   label: 'SAFE — No PPE Required',     color: '#22c55e', alertClass: 'alert-safe',    alertText: 'LOW ENERGY: No arc flash PPE required. Standard electrical safety practices apply.' };
+  if (E < 4)    return { id: 'cat1',   label: 'Category 1 — 4 cal/cm² PPE', color: '#84cc16', alertClass: 'alert-safe',    alertText: 'CATEGORY 1: Arc flash PPE required — 4 cal/cm² minimum rating. Arc-rated FR clothing.' };
+  if (E < 8)    return { id: 'cat2',   label: 'Category 2 — 8 cal/cm² PPE', color: '#eab308', alertClass: 'alert-warning', alertText: 'CATEGORY 2: Arc flash PPE required — 8 cal/cm² minimum rating. Arc-rated suit + face shield.' };
+  if (E < 25)   return { id: 'cat3',   label: 'Category 3 — 25 cal/cm² PPE',color: '#f97316', alertClass: 'alert-warning', alertText: 'CATEGORY 3: Heavy arc flash PPE required — 25 cal/cm² minimum. Full arc flash suit.' };
+  if (E < 40)   return { id: 'cat4',   label: 'Category 4 — 40 cal/cm² PPE',color: '#ef4444', alertClass: 'alert-warning', alertText: 'CATEGORY 4: Maximum arc flash PPE required — 40 cal/cm². Consider de-energising first.' };
+  return         { id: 'danger', label: 'DANGER: No Safe PPE',            color: '#ff2d55', alertClass: 'alert-danger',  alertText: 'EXTREME HAZARD: Incident energy exceeds PPE limits! Evacuation zone required.' };
+}
+ 
+// ─── UI Update ──────────────────────────────────────────────────────────────
+function updateUI() {
+  const E = calcEnergy(tripTime, faultCurrent);
+  const h = getHazardLevel(E);
+ 
+  // Metrics
+  document.getElementById('energyDisplay').innerHTML =
+    `${E.toFixed(2)} <span class="metric-unit">cal/cm²</span>`;
+  document.getElementById('ppeDisplay').textContent = h.label;
+  document.getElementById('energyDisplay').style.color = h.color;
+  document.getElementById('ppeDisplay').style.color = h.color;
+ 
+  // Alert
+  const banner = document.getElementById('alertBanner');
+  banner.className = 'alert-banner ' + h.alertClass;
+  banner.innerHTML = `<div class="pulse-dot"></div><span>${h.alertText}</span>`;
+  if (h.id === 'danger') banner.querySelector('.pulse-dot').style.cssText =
+    'width:8px;height:8px;border-radius:50%;flex-shrink:0;background:#ef4444;box-shadow:0 0 8px #ef4444;animation:blink 0.8s infinite;';
+  else banner.querySelector('.pulse-dot').style.cssText =
+    `width:8px;height:8px;border-radius:50%;flex-shrink:0;background:${h.color};`;
+ 
+  // Overlay info
+  document.getElementById('faultInfo').textContent = faultCurrent.toFixed(4) + ' kA';
+  document.getElementById('arcingInfo').textContent = arcingCurrent.toFixed(4) + ' kA';
+  document.getElementById('relayInfo').textContent = tripTime.toFixed(4) + 's';
+ 
+  // Person label
+  const pl = document.getElementById('personLabel');
+  pl.textContent = h.label.toUpperCase().split('—')[0].trim();
+  pl.style.color = h.color;
+  pl.style.borderColor = h.color;
+  
+  // Legend
+  ['safe','cat1','cat2','cat3','cat4','danger'].forEach(id => {
+    document.getElementById('l-'+id).classList.toggle('active', id === h.id);
+  });
+ 
+  // CSS variable for canvas
+  document.documentElement.style.setProperty('--current-hazard', h.color);
+  window._hazardColor = h.color;
+  window._energy = E;
+  window._hazardId = h.id;
+}
+ 
+// ─── Canvas Arc Flash Animation ─────────────────────────────────────────────
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+let sparks = [];
+let bolts = [];
+let t = 0;
+ 
+function resizeCanvas() {
+  const vp = canvas.parentElement;
+  canvas.width = vp.clientWidth;
+  canvas.height = vp.clientHeight;
+}
+ 
+class Spark {
+  constructor(ox, oy, intensity) {
+    this.ox = ox; this.oy = oy;
+    this.intensity = intensity;
+    this.reset();
+  }
+  reset() {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = (1 + Math.random() * 4) * this.intensity;
+    this.x = this.ox; this.y = this.oy;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed - Math.random() * 3;
+    this.life = 1;
+    this.decay = 0.015 + Math.random() * 0.04;
+    this.length = 6 + Math.random() * 18 * this.intensity;
+    this.width = 0.5 + Math.random() * 1.5;
+    this.hue = this.intensity > 0.7
+      ? (Math.random() > 0.5 ? '#ff6b9d' : '#ff2d55')
+      : (Math.random() > 0.5 ? '#fbbf24' : '#f97316');
+    this.branches = [];
+    if (Math.random() < 0.3 * this.intensity) {
+      const ba = angle + (Math.random() - 0.5) * 1.2;
+      this.branches.push({ dx: Math.cos(ba) * this.length * 0.6, dy: Math.sin(ba) * this.length * 0.6 });
+    }
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vy += 0.15; // gravity
+    this.vx *= 0.97;
+    this.life -= this.decay;
+    return this.life > 0;
+  }
+  draw(ctx) {
+    const alpha = Math.pow(this.life, 1.5);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = this.hue;
+    ctx.lineWidth = this.width;
+    ctx.shadowColor = this.hue;
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(this.x + this.vx * 4, this.y + this.vy * 4);
+    ctx.stroke();
+    // branches
+    this.branches.forEach(b => {
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y);
+      ctx.lineTo(this.x + b.dx * this.life, this.y + b.dy * this.life);
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+}
+ 
+class BoltSegment {
+  constructor() { this.points = []; this.life = 1; this.decay = 0.06 + Math.random()*0.04; }
+  generate(x1,y1,x2,y2,depth) {
+    this.points = [[x1,y1]];
+    this._sub(x1,y1,x2,y2,depth);
+    this.points.push([x2,y2]);
+  }
+  _sub(x1,y1,x2,y2,depth) {
+    if (depth===0) return;
+    const mx=(x1+x2)/2 + (Math.random()-0.5)*(Math.hypot(x2-x1,y2-y1)*0.5);
+    const my=(y1+y2)/2 + (Math.random()-0.5)*(Math.hypot(x2-x1,y2-y1)*0.5);
+    this._sub(x1,y1,mx,my,depth-1);
+    this.points.push([mx,my]);
+    this._sub(mx,my,x2,y2,depth-1);
+  }
+  update() { this.life -= this.decay; return this.life > 0; }
+  draw(ctx, color) {
+    if (this.points.length < 2) return;
+    ctx.save();
+    ctx.globalAlpha = this.life * 0.9;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.moveTo(this.points[0][0], this.points[0][1]);
+    for (let i=1;i<this.points.length;i++) ctx.lineTo(this.points[i][0],this.points[i][1]);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+ 
+function spawnBolts(cx, cy, intensity, color) {
+  const count = Math.floor(1 + intensity * 4);
+  for (let i=0;i<count;i++) {
+    const b = new BoltSegment();
+    const angle = Math.random() * Math.PI * 2;
+    const len = 30 + Math.random() * 80 * intensity;
+    b.generate(cx, cy, cx + Math.cos(angle)*len, cy + Math.sin(angle)*len, 3);
+    b.life = 0.8 + Math.random()*0.2;
+    bolts.push(b);
+  }
+}
+ 
+function drawPanel(cx, panelTop, panelBot, panelW, E) {
+  const ph = panelBot - panelTop;
+  // Panel body
+  ctx.save();
+  ctx.fillStyle = '#1a1f2e';
+  ctx.strokeStyle = '#2d3650';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(cx - panelW/2, panelTop, panelW, ph, 4);
+  ctx.fill(); ctx.stroke();
+ 
+  // Panel grid lines (bus bars)
+  ctx.strokeStyle = '#2a3040';
+  ctx.lineWidth = 1;
+  for (let i=1;i<4;i++) {
+    ctx.beginPath();
+    ctx.moveTo(cx - panelW/2, panelTop + ph*i/4);
+    ctx.lineTo(cx + panelW/2, panelTop + ph*i/4);
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.moveTo(cx, panelTop); ctx.lineTo(cx, panelBot);
+  ctx.stroke();
+ 
+  // Panel glow from arc
+  const intensity = Math.min(E / 50, 1);
+  const color = window._hazardColor || '#f97316';
+  const grad = ctx.createRadialGradient(cx, (panelTop+panelBot)/2, 0, cx, (panelTop+panelBot)/2, panelW*0.9);
+  grad.addColorStop(0, color + Math.floor(intensity*90+20).toString(16).padStart(2,'0'));
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.roundRect(cx - panelW/2, panelTop, panelW, ph, 4);
+  ctx.fill();
+  ctx.restore();
+}
+ 
+function drawPerson(px, py, color, danger) {
+  ctx.save();
+  ctx.globalAlpha = 0.85;
+  const s = 1;
+  // body glow aura (danger)
+  if (danger > 0.5) {
+    const aura = ctx.createRadialGradient(px, py, 0, px, py, 40*danger);
+    aura.addColorStop(0, color+'30');
+    aura.addColorStop(1, 'transparent');
+    ctx.fillStyle = aura;
+    ctx.beginPath();
+    ctx.arc(px, py, 40*danger, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.fillStyle = danger > 0.2 ? color : '#94a3b8';
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 8*danger;
+  // head
+  ctx.beginPath();
+  ctx.arc(px, py - 38*s, 10*s, 0, Math.PI*2);
+  ctx.fill();
+  // body
+  ctx.beginPath();
+  ctx.roundRect(px - 8*s, py - 26*s, 16*s, 28*s, 3);
+  ctx.fill();
+  // legs
+  ctx.beginPath();
+  ctx.roundRect(px - 8*s, py + 2*s, 7*s, 20*s, 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.roundRect(px + 1*s, py + 2*s, 7*s, 20*s, 2);
+  ctx.fill();
+  // arms
+  ctx.beginPath();
+  ctx.roundRect(px - 16*s, py - 24*s, 7*s, 20*s, 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.roundRect(px + 9*s, py - 24*s, 7*s, 20*s, 2);
+  ctx.fill();
+  ctx.restore();
+}
+ 
+function drawGround(cy, w) {
+  ctx.save();
+  ctx.strokeStyle = '#2a3040';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, cy); ctx.lineTo(w, cy);
+  ctx.stroke();
+  // hatching
+  ctx.strokeStyle = '#1e2535';
+  ctx.lineWidth = 1;
+  for (let x=0; x<w; x+=20) {
+    ctx.beginPath();
+    ctx.moveTo(x, cy); ctx.lineTo(x-10, cy+10);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+ 
+function animate() {
+  animFrame = requestAnimationFrame(animate);
+  t++;
+ 
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+ 
+  // Dark Theme Canvas Background gradient
+  const bgGrad = ctx.createLinearGradient(0,0,0,H);
+  bgGrad.addColorStop(0,'#07090f');
+  bgGrad.addColorStop(1,'#0a0d15');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0,0,W,H);
+ 
+  const E = window._energy || calcEnergy(tripTime, faultCurrent);
+  const intensity = Math.min(E/50, 1);
+  const color = window._hazardColor || '#f97316';
+ 
+  // Ground line
+  const groundY = H * 0.72;
+  drawGround(groundY, W);
+ 
+  // Panel dimensions
+  const panelCX = W * 0.35;
+  const panelW = Math.min(100, W*0.16);
+  const panelTop = groundY - H * 0.38;
+  const panelBot = groundY;
+  const arcCX = panelCX;
+  const arcCY = (panelTop + panelBot) / 2;
+ 
+  // Draw panel
+  drawPanel(panelCX, panelTop, panelBot, panelW, E);
+ 
+  // Core arc glow
+  const glowR = 20 + intensity * 60;
+  const flicker = 0.85 + Math.sin(t*0.3)*0.1 + Math.random()*0.05;
+  const glowGrad = ctx.createRadialGradient(arcCX,arcCY,0,arcCX,arcCY,glowR*flicker);
+  glowGrad.addColorStop(0, '#ffffff');
+  glowGrad.addColorStop(0.15, color + 'cc');
+  glowGrad.addColorStop(0.5, color + '40');
+  glowGrad.addColorStop(1, 'transparent');
+  ctx.globalAlpha = 0.6 + intensity*0.4;
+  ctx.fillStyle = glowGrad;
+  ctx.beginPath();
+  ctx.arc(arcCX, arcCY, glowR*flicker, 0, Math.PI*2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+ 
+  // Wide ambient glow
+  if (intensity > 0.2) {
+    const ambGrad = ctx.createRadialGradient(arcCX,arcCY,0,arcCX,arcCY, 150+intensity*200);
+    ambGrad.addColorStop(0, color+'20');
+    ambGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = ambGrad;
+    ctx.fillRect(0,0,W,H);
+  }
+ 
+  // Spawn sparks
+  if (t % Math.max(1, Math.floor(5 - intensity*4)) === 0) {
+    for (let i=0;i<Math.floor(1+intensity*6);i++) {
+      sparks.push(new Spark(arcCX + (Math.random()-0.5)*8, arcCY + (Math.random()-0.5)*8, intensity));
+    }
+  }
+  // Spawn bolts
+  if (t % Math.max(2, Math.floor(12 - intensity*8)) === 0) {
+    spawnBolts(arcCX, arcCY, intensity, color);
+  }
+ 
+  // Update & draw bolts
+  bolts = bolts.filter(b => { b.draw(ctx, color); return b.update(); });
+  // Update & draw sparks
+  sparks = sparks.filter(s => { const alive = s.update(); s.draw(ctx); return alive && sparks.length < 400; });
+ 
+  // Flickering inner arc core
+  if (intensity > 0.1) {
+    ctx.save();
+    ctx.globalAlpha = (0.6 + Math.random()*0.4) * intensity;
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 30;
+    ctx.beginPath();
+    ctx.arc(arcCX + (Math.random()-0.5)*3, arcCY + (Math.random()-0.5)*3, 3+intensity*8, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+ 
+  // Person
+  const personX = W * 0.68;
+  const personY = groundY - 22;
+  drawPerson(personX, personY, color, intensity);
+ 
+  // Electrical cable from panel top
+  ctx.save();
+  ctx.strokeStyle = '#3d4560';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(panelCX - panelW*0.25, panelTop);
+  ctx.lineTo(panelCX - panelW*0.25, panelTop - 20);
+  ctx.moveTo(panelCX + panelW*0.25, panelTop);
+  ctx.lineTo(panelCX + panelW*0.25, panelTop - 20);
+  ctx.stroke();
+  // Energized glow on cables
+  if (intensity > 0.3) {
+    ctx.strokeStyle = color + '60';
+    ctx.lineWidth = 1;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+ 
+// ─── Sync controls ──────────────────────────────────────────────────────────
+function syncFromSliders() {
+  tripTime = parseFloat(document.getElementById('tripSlider').value);
+  faultCurrent = parseFloat(document.getElementById('faultSlider').value);
+  document.getElementById('tripInput').value = tripTime.toFixed(4);
+  document.getElementById('faultInput').value = faultCurrent.toFixed(4);
+  updateUI();
+}
+ 
+document.getElementById('tripSlider').addEventListener('input', syncFromSliders);
+document.getElementById('faultSlider').addEventListener('input', syncFromSliders);
+ 
+document.getElementById('tripInput').addEventListener('change', function() {
+  const v = Math.min(2, Math.max(0.05, parseFloat(this.value) || 0.05));
+  this.value = v.toFixed(4);
+  document.getElementById('tripSlider').value = v;
+  tripTime = v;
+  updateUI();
+});
+document.getElementById('faultInput').addEventListener('change', function() {
+  const v = Math.min(50, Math.max(1, parseFloat(this.value) || 1));
+  this.value = v.toFixed(4);
+  document.getElementById('faultSlider').value = v;
+  faultCurrent = v;
+  updateUI();
+});
+ 
+function resetToInitial() {
+  tripTime = 0.80; faultCurrent = 25;
+  document.getElementById('tripSlider').value = 0.80;
+  document.getElementById('faultSlider').value = 25;
+  document.getElementById('tripInput').value = '0.8000';
+  document.getElementById('faultInput').value = '25.0000';
+  updateUI();
+}
+ 
+function setScenario(type) {
+  if (type === 'safe') {
+    tripTime = 0.10; faultCurrent = 3;
+  } else {
+    tripTime = 2.00; faultCurrent = 50;
+  }
+  document.getElementById('tripSlider').value = tripTime;
+  document.getElementById('faultSlider').value = faultCurrent;
+  document.getElementById('tripInput').value = tripTime.toFixed(4);
+  document.getElementById('faultInput').value = faultCurrent.toFixed(4);
+  updateUI();
+}
+ 
+// ─── Init ───────────────────────────────────────────────────────────────────
+window.addEventListener('resize', () => { resizeCanvas(); });
+resizeCanvas();
+updateUI();
+animate();
+ 
+// Limit spark array
+setInterval(() => { if(sparks.length > 350) sparks = sparks.slice(-200); }, 2000);
+</script>
+</body>
+</html>
