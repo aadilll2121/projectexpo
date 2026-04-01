@@ -555,7 +555,7 @@
           ">🎓</div>
           <div>
             <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;">Institution</div>
-            <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:#cbd5e1;letter-spacing:0.02em;">Birla Vishvakarma Mahavidyalaya</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:#cbd5e1;letter-spacing:0.02em;">BVM Engineering College</div>
           </div>
         </div>
  
@@ -624,7 +624,7 @@
   <div class="card-header">
     <div class="header-left">
       <div class="card-title">Arc Flash &amp; Relay Coordination</div>
-      <div class="standard-badge">⬡ According to IEEE 1584-2018 </div>
+      <div class="standard-badge">⬡ Restored to ETAP IEEE 1584 Sync</div>
     </div>
     <div class="header-right">
       <div class="metric-box">
@@ -914,9 +914,14 @@ let tripTime = 0.80;     // Trip time based on Arcing Current
 let faultCurrent = 25;   // Bolted Fault Current
 let arcingCurrent = 0;   // Arcing Fault Current
 let animFrame;
+let t = 0;
+
+// Animation States
+let runProgress = 0; // 0 = at panel, 1 = off screen
+let personFacingRight = true;
  
 // ─── Calculation (IEEE 1584-2018 Restored Model to match ETAP) ─────────────
-function calcEnergy(t, I_bolted) {
+function calcEnergy(t_trip, I_bolted) {
   
   // 1. Calculate Arcing Current (Ia)
   // ETAP calculates an arcing current which is lower than the bolted fault current.
@@ -937,7 +942,7 @@ function calcEnergy(t, I_bolted) {
   const En = Math.pow(10, k1 + k2 + 1.081 * Math.log10(Ia));
   
   // Final Incident Energy (E) in cal/cm²
-  const E = 4.184 * Cf * En * (t / 0.2) * Math.pow(610 / D, x);
+  const E = 4.184 * Cf * En * (t_trip / 0.2) * Math.pow(610 / D, x);
   
   return E;
 }
@@ -1000,7 +1005,6 @@ const canvas = document.getElementById('simCanvas');
 const ctx = canvas.getContext('2d');
 let sparks = [];
 let bolts = [];
-let t = 0;
  
 function resizeCanvas() {
   const vp = canvas.parentElement;
@@ -1145,45 +1149,74 @@ function drawPanel(cx, panelTop, panelBot, panelW, E) {
   ctx.restore();
 }
  
-function drawPerson(px, py, color, danger) {
+function drawPerson(px, py, color, danger, swing, flip = 1) {
   ctx.save();
+  ctx.translate(px, py); // Move to person's location
+  ctx.scale(flip, 1);    // Flip horizontally if running back
   ctx.globalAlpha = 0.85;
   const s = 1;
+  
   // body glow aura (danger)
   if (danger > 0.5) {
-    const aura = ctx.createRadialGradient(px, py, 0, px, py, 40*danger);
-    aura.addColorStop(0, color+'30');
+    const aura = ctx.createRadialGradient(0, 0, 0, 0, 0, 40*danger);
+    aura.addColorStop(0, color+'40');
     aura.addColorStop(1, 'transparent');
     ctx.fillStyle = aura;
     ctx.beginPath();
-    ctx.arc(px, py, 40*danger, 0, Math.PI*2);
+    ctx.arc(0, 0, 40*danger, 0, Math.PI*2);
     ctx.fill();
   }
+  
   ctx.fillStyle = danger > 0.2 ? color : '#94a3b8';
   ctx.shadowColor = color;
   ctx.shadowBlur = 8*danger;
+  
   // head
   ctx.beginPath();
-  ctx.arc(px, py - 38*s, 10*s, 0, Math.PI*2);
+  ctx.arc(0, -38*s, 10*s, 0, Math.PI*2);
   ctx.fill();
+  
   // body
   ctx.beginPath();
-  ctx.roundRect(px - 8*s, py - 26*s, 16*s, 28*s, 3);
+  ctx.roundRect(-8*s, -26*s, 16*s, 28*s, 3);
   ctx.fill();
-  // legs
+  
+  // left leg
+  ctx.save();
+  ctx.translate(-4*s, 2*s);
+  ctx.rotate(swing);
   ctx.beginPath();
-  ctx.roundRect(px - 8*s, py + 2*s, 7*s, 20*s, 2);
+  ctx.roundRect(-3.5*s, 0, 7*s, 20*s, 2);
   ctx.fill();
+  ctx.restore();
+  
+  // right leg
+  ctx.save();
+  ctx.translate(4*s, 2*s);
+  ctx.rotate(-swing);
   ctx.beginPath();
-  ctx.roundRect(px + 1*s, py + 2*s, 7*s, 20*s, 2);
+  ctx.roundRect(-3.5*s, 0, 7*s, 20*s, 2);
   ctx.fill();
-  // arms
+  ctx.restore();
+  
+  // left arm (swings opposite to left leg)
+  ctx.save();
+  ctx.translate(-12*s, -24*s);
+  ctx.rotate(-swing);
   ctx.beginPath();
-  ctx.roundRect(px - 16*s, py - 24*s, 7*s, 20*s, 2);
+  ctx.roundRect(-3.5*s, 0, 7*s, 20*s, 2);
   ctx.fill();
+  ctx.restore();
+  
+  // right arm (swings opposite to right leg)
+  ctx.save();
+  ctx.translate(12*s, -24*s);
+  ctx.rotate(swing);
   ctx.beginPath();
-  ctx.roundRect(px + 9*s, py - 24*s, 7*s, 20*s, 2);
+  ctx.roundRect(-3.5*s, 0, 7*s, 20*s, 2);
   ctx.fill();
+  ctx.restore();
+
   ctx.restore();
 }
  
@@ -1291,10 +1324,32 @@ function animate() {
     ctx.restore();
   }
  
-  // Person
-  const personX = W * 0.68;
+  // Person Animation Logic
+  const isCurrentlyDanger = (window._hazardId === 'danger');
+  const runSpeed = 1 / 180; // 180 frames = 3 seconds at 60fps
+  
+  let isRunning = false;
+  if (isCurrentlyDanger && runProgress < 1) {
+    runProgress += runSpeed;
+    if (runProgress > 1) runProgress = 1;
+    isRunning = true;
+    personFacingRight = true; // Running away (right)
+  } else if (!isCurrentlyDanger && runProgress > 0) {
+    runProgress -= runSpeed;
+    if (runProgress < 0) runProgress = 0;
+    isRunning = true;
+    personFacingRight = false; // Running back (left)
+  } else if (!isCurrentlyDanger && runProgress === 0) {
+    personFacingRight = true; // Default stance
+  }
+  
+  const basePersonX = W * 0.68;
+  const maxOffset = W * 0.5; // Offset to get completely off-screen
+  const personX = basePersonX + (runProgress * maxOffset);
   const personY = groundY - 22;
-  drawPerson(personX, personY, color, intensity);
+  const legSwing = isRunning ? Math.sin(t * 0.4) * 0.8 : 0;
+  
+  drawPerson(personX, personY, color, intensity, legSwing, personFacingRight ? 1 : -1);
  
   // Electrical cable from panel top
   ctx.save();
